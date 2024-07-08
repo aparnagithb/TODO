@@ -2,17 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, StatusBar } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Welcome from './app/Welcome';
 import LoginScreen from './app/LoginScreen';
 import RegisterScreen from './app/RegisterScreen';
 import HomeScreen from './app/HomeScreen';
 
-const Stack = createStackNavigator();
+const Stack = createNativeStackNavigator();
 
 const App = () => {
   const [loading, setLoading] = useState(true);
   const [isFirstTimeLoad, setIsFirstTimeLoad] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState('');
 
   const slides = [
     {
@@ -40,18 +42,20 @@ const App = () => {
     {
       key: 5,
       title: 'Welcome to our app!',
-      subtitle: 'Enjoy using our app!',
+      subtitle: 'Please login or Create an Account to Continue ',
       backgroundColor: '#000000', // Black background
     },
   ];
 
   const checkForFirstTimeLoaded = async () => {
-    // Uncomment the line below to clear the value in AsyncStorage for development purposes
-     await AsyncStorage.removeItem('isFirstTimeOpen');
-
-    const result = await AsyncStorage.getItem('isFirstTimeOpen');
-    if (result === null) {
+    const isFirstTimeOpen = await AsyncStorage.getItem('isFirstTimeOpen');
+    const storedUsername = await AsyncStorage.getItem('username');
+    if (isFirstTimeOpen === null) {
       setIsFirstTimeLoad(true);
+    }
+    if (storedUsername) {
+      setUsername(storedUsername);
+      setIsLoggedIn(true);
     }
     setLoading(false);
   };
@@ -70,18 +74,17 @@ const App = () => {
   return (
     <NavigationContainer>
       <StatusBar hidden />
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {isFirstTimeLoad ? (
-          <Stack.Screen name="Welcome">
-            {(props) => <Welcome {...props} slides={slides} onDone={handleDone} />}
-          </Stack.Screen>
-        ) : (
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-            <Stack.Screen name="Home" component={HomeScreen} />
-          </>
-        )}
+      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={isFirstTimeLoad ? "Welcome" : isLoggedIn ? "Home" : "Login"}>
+        <Stack.Screen name="Welcome">
+          {(props) => <Welcome {...props} slides={slides} onDone={handleDone} />}
+        </Stack.Screen>
+        <Stack.Screen name="Login">
+          {(props) => <LoginScreen {...props} setUsername={setUsername} setIsLoggedIn={setIsLoggedIn} />}
+        </Stack.Screen>
+        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="Home">
+          {(props) => <HomeScreen {...props} username={username} setIsLoggedIn={setIsLoggedIn} />}
+        </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
   );

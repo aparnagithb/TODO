@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, StyleSheet, FlatList, Text, Dimensions, Image, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
@@ -24,11 +24,23 @@ const Welcome = ({ slides = [], onDone }) => {
   const handleGetStarted = () => {
     flatListRef.current.scrollToIndex({ index: slides.length - 1, animated: true });
   };
+  const handleBack = () => {
+    if (currentSlideIndex <= 0) return;
+    flatListRef.current.scrollToIndex({ index: currentSlideIndex - 1, animated: true });
+  };
 
   const handleNext = () => {
     if (currentSlideIndex >= slides.length - 1) return;
     flatListRef.current.scrollToIndex({ index: currentSlideIndex + 1, animated: true });
   };
+  useEffect(() => {
+    if (currentSlideIndex === 0) {
+      const timer = setTimeout(() => {
+        handleNext();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [currentSlideIndex]);
 
   const renderSlide = ({ item, index }) => {
     return (
@@ -37,9 +49,9 @@ const Welcome = ({ slides = [], onDone }) => {
           <Image source={item.logo} style={styles.logo} resizeMode="contain" />
         ) : (
           <>
-            <Image source={item.image} style={styles.image} resizeMode="cover" />
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.subtitle}>{item.subtitle}</Text>
+            <Image source={item.image} style={styles.image} resizeMode="contain" />
+            <Text style={index === slides.length - 1 ? styles.lastSlideTitle : styles.title}>{item.title}</Text>
+            <Text style={index === slides.length - 1 ? styles.lastSlideSubtitle : styles.subtitle}>{item.subtitle}</Text>
           </>
         )}
 
@@ -48,8 +60,13 @@ const Welcome = ({ slides = [], onDone }) => {
             <Text style={styles.buttonText}>Skip</Text>
           </TouchableOpacity>
         )}
+        {index > 0 && index < slides.length - 1 && (
+          <TouchableOpacity onPress={handleBack} style={[styles.button, styles.leftbottomButton]}>
+            <Text style={styles.buttonText}>Back</Text>
+          </TouchableOpacity>
+        )}
 
-        {index < slides.length - 1 && (
+{index < slides.length - 1 && index !== 0 && (
           <TouchableOpacity onPress={handleNext} style={[styles.button, styles.rightButton]}>
             <Text style={styles.buttonText}>Next</Text>
           </TouchableOpacity>
@@ -62,21 +79,21 @@ const Welcome = ({ slides = [], onDone }) => {
         )}
 
         {index === slides.length - 1 && (
-          <View style={styles.bottomButtonsContainer}>
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.subtitle}>{item.subtitle}</Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Login')}
-              style={[styles.button, styles.loginButton]}
-            >
-              <Text style={[styles.buttonText, styles.loginText]}>Login</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Register')}
-              style={[styles.button, styles.registerButton]}
-            >
-              <Text style={[styles.buttonText, styles.registerText]}>Create Account</Text>
-            </TouchableOpacity>
+          <View style={styles.lastSlide}>
+            <View style={styles.bottomButtonsContainer}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Login')}
+                style={[styles.button, styles.loginButton]}
+              >
+                <Text style={[styles.buttonText, styles.loginText]}>         Login         </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Register')}
+                style={[styles.button, styles.registerButton]}
+              >
+                <Text style={[styles.buttonText, styles.registerText]}>Create Account</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </View>
@@ -110,62 +127,102 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
   },
   logo: {
-    width: 470,
-    height: 470,
+    width: 220,
+    height: 220,
     marginBottom: 20,
   },
   image: {
     width: '50%',
     height: '35%',
-    marginBottom: 20,
+    marginBottom: 60,
   },
   title: {
-    fontSize: 84,
+    fontSize: 34,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 48,
     textAlign: 'center',
     color: '#fff',
+  },
+  lastSlideTitle: {
+    fontSize: 34,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#fff',
+    position: 'absolute',
+    top: 150,
+    left: 20,
+    right: 20,
   },
   subtitle: {
-    fontSize: 42,
+    fontSize: 22,
+    textAlign: 'center',
+    color: '#dddddd',
+  },
+  lastSlideSubtitle: {
+    fontSize: 22,
     textAlign: 'center',
     color: '#fff',
+    position: 'absolute',
+    top: 235,
+    left: 20,
+    right: 20,
   },
   button: {
+    borderRadius: 8,
     backgroundColor: '#8875FF',
     paddingVertical: 10,
     paddingHorizontal: 20,
     marginVertical: 10,
   },
   buttonText: {
-    fontSize: 64,
+    fontSize: 22,
     color: '#fff',
+  },
+  leftbottomButton: {
+    position: 'absolute',
+    left: 20,
+    bottom: 20,
+    backgroundColor: 'transparent',
+    color: '#DCDCDC',
   },
   leftButton: {
     position: 'absolute',
     left: 20,
-    bottom: 20,
+    top: 20,
+    backgroundColor: 'transparent',
+    color: '#DCDCDC',
   },
   rightButton: {
     position: 'absolute',
     right: 20,
     bottom: 20,
   },
-  bottomButtonsContainer: {
-    flexDirection: 'column',
-    justifyContent: 'center',
+  lastSlide: {
+    flex: 1,
+    justifyContent: 'space-between',
     alignItems: 'center',
-    position: 'absolute',
-    bottom: 100,
-    width: '100%',
+    paddingVertical: 40,
   },
   welcomeText: {
     fontSize: 42,
     color: '#fff',
-    marginBottom: 20,
+    marginTop: 15,
+    textAlign: 'center',
+  },
+  welcomeSubText: {
+    fontSize: 22,
+    color: '#fff',
+    textAlign: 'center',
+  },
+  bottomButtonsContainer: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
   },
   loginButton: {
     backgroundColor: '#8875FF',
+    marginTop: 20,
   },
   loginText: {
     backgroundColor: '#8875FF',

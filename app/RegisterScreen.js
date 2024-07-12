@@ -16,14 +16,14 @@ const RegisterScreen = () => {
 
       // Example: Check if password is at least 8 characters long
       if (password.length < 4) {
-        throw new Error('Password must be at least 8 characters long');
+        throw new Error('Password must be at least 6 characters long');
       }
 
       if (password !== confirmPassword) {
         throw new Error('Passwords do not match');
       }
 
-      const response = await fetch('http://192.168.0.4:5000/register', {
+      const response = await fetch('http://192.168.0.178:5000/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   backButtonText: {
-    fontSize: 15,
+    fontSize: 24,
     color: '#fff',
   },
   input: {

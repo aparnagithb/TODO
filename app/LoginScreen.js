@@ -19,7 +19,7 @@ const LoginScreen = ({ setUsername, setIsLoggedIn }) => {
         throw new Error('Password must be at least 8 characters long');
       }
 
-      const response = await fetch('http://192.168.0.4:5000/login', {
+      const response = await fetch('http://192.168.0.178:5000/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   backButtonText: {
-    fontSize: 15,
+    fontSize: 25,
     color: '#fff',
   },
   input: {

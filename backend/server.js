@@ -4,7 +4,8 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors({
   origin: '*',
   methods: 'GET,POST',
@@ -29,7 +30,7 @@ const User = mongoose.model('User', UserSchema);
 
 const CategorySchema = new mongoose.Schema({
   name: { type: String, required: true },
-  icon: { type: String, required: true }, // Store icon as base64 string
+  icon: { type: String, required: true },
   color: { type: String, required: true },
 }, { timestamps: true });
 
@@ -39,6 +40,13 @@ const TaskSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String },
   category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
+  priorityFlag: { type: Number, required: true },
+  timeLimit: { type: Date, required: true },
+  finishTime: { type: Date },
+  completed: { type: Boolean, default: false },
+  username: { type: String, required: true } // Add username field
+
+
 }, { timestamps: true });
 
 const Task = mongoose.model('Task', TaskSchema);
@@ -91,18 +99,58 @@ app.post('/categories', async (req, res) => {
     res.status(400).send({ error: error.message });
   }
 });
-
 app.post('/tasks', async (req, res) => {
   try {
-    const { title, description, category } = req.body;
-    const task = new Task({ title, description, category });
+    const { title, description, category, priorityFlag, timeLimit, finishTime, username } = req.body; // Added username here
+    const task = new Task({ title, description, category, priorityFlag, timeLimit, finishTime, username }); // Include username in the Task creation
     await task.save();
     res.status(201).send({ message: 'Task created', task });
   } catch (error) {
     res.status(400).send({ error: error.message });
   }
 });
+app.get('/tasks', async (req, res) => {
+  try {
+    const { username } = req.query; // Get the username from query parameters
+    const tasks = await Task.find({ username }).populate('category'); // Filter tasks by username
+    res.send({ tasks });
+  } catch (error) {
+    res.status(400).send({ error: error.message });
+  }
+});
 
+app.put('/tasks/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, category, priorityFlag, timeLimit, finishTime, completed } = req.body;
+    const updateFields = { title, description, category, priorityFlag, timeLimit, finishTime };
+    
+    // Add completed status if provided (for handleCheckboxChange function)
+    if (completed !== undefined) {
+      updateFields.completed = completed;
+    }
+
+    const updatedTask = await Task.findByIdAndUpdate(id, updateFields, { new: true });
+    if (!updatedTask) {
+      throw new Error('Task not found');
+    }
+    res.send({ message: 'Task updated', task: updatedTask });
+  } catch (error) {
+    res.status(400).send({ error: error.message });
+  }
+});
+// Delete a task
+app.delete('/tasks/:id', async (req, res) => {
+  try {
+    const task = await Task.findByIdAndDelete(req.params.id);
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+    res.json({ message: 'Task deleted' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 app.listen(5000, () => {
   console.log('Server running on port 5000');
 });

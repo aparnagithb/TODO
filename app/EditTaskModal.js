@@ -39,7 +39,7 @@ const EditTaskModal = ({ visible, onClose, task, fetchTasks }) => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://192.168.0.178:5000/categories');
+      const response = await axios.get('http://192.168.0.4:5000/categories');
       setCategories(response.data.categories);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -75,7 +75,7 @@ const EditTaskModal = ({ visible, onClose, task, fetchTasks }) => {
         timeLimit: editedTask.timeLimit,
         finishTime: editedTask.finishTime,
       };
-      const response = await axios.put(`http://192.168.0.178:5000/tasks/${task._id}`, taskData);
+      const response = await axios.put(`http://192.168.0.4:5000/tasks/${task._id}`, taskData);
       console.log('Task updated successfully:', response.data.task);
       fetchTasks();
       onClose();
@@ -86,7 +86,7 @@ const EditTaskModal = ({ visible, onClose, task, fetchTasks }) => {
 
   const deleteTask = async () => {
     try {
-      const response = await axios.delete(`http://192.168.0.178:5000/tasks/${task._id}`);
+      const response = await axios.delete(`http://192.168.0.4:5000/tasks/${task._id}`);
       console.log('Task deleted successfully:', response.data.message);
       fetchTasks();
       onClose();

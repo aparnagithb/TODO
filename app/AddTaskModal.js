@@ -26,7 +26,7 @@ const AddTaskModal = ({ visible, onClose,fetchTasks,username }) => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://192.168.0.178:5000/categories');
+      const response = await axios.get('http://192.168.0.4:5000/categories');
       setCategories(response.data.categories);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -64,7 +64,7 @@ const AddTaskModal = ({ visible, onClose,fetchTasks,username }) => {
 
 
       };
-      const response = await axios.post('http://192.168.0.178:5000/tasks', taskData);
+      const response = await axios.post('http://192.168.0.4:5000/tasks', taskData);
       console.log('Task saved successfully:', response.data.task);
       setTaskName('');
       setTaskDescription('');

@@ -23,7 +23,7 @@ const RegisterScreen = () => {
         throw new Error('Passwords do not match');
       }
 
-      const response = await fetch('http://192.168.0.178:5000/register', {
+      const response = await fetch('http://192.168.0.4:5000/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -5,13 +5,13 @@ const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: '#000',
-      padding: 10,
+      padding: 11,
     },
     topContainer: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 21,
+      marginBottom: 20,
     },
     indexText: {
       fontSize: 24,
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     },
     buttonText: {
       color: '#fff',
-      fontSize: 16,
+      fontSize: 15,
     },
     selectedColorBox: {
       borderWidth: 3, // Thickness of the border
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
       zIndex: 1, // Ensure it appears above other elements
     },
     addButtonText: {
-      fontSize: 24,
+      fontSize: 25,
       color: '#fff',
     },
     modalContainer: {

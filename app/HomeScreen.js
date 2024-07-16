@@ -11,7 +11,7 @@ import ProfileModal from './ProfileModal'; // Import ProfileModal component
 import styles from './styles'; // Import styles
 
 
-const HomeScreen = ({ username, setIsLoggedIn }) => {
+const HomeScreen = ({ username, setIsLoggedIn ,setUsername}) => {
   const navigation = useNavigation();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isAddCategoryModalVisible, setIsAddCategoryModalVisible] = useState(false);
@@ -28,16 +28,18 @@ const HomeScreen = ({ username, setIsLoggedIn }) => {
 const [selectedTask, setSelectedTask] = useState(null);
 const [isProfileModalVisible, setIsProfileModalVisible] = useState(false); // State for Profile Modal visibility
 const [selectedColor, setSelectedColor] = useState(null);
+const [userDetails, setUserDetails] = useState({});
 
 
   useEffect(() => {
     fetchCategories();
     fetchTasks(); // Fetch tasks when component mounts
+    fetchUserDetails();
   }, []);
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://192.168.0.178:5000/categories');
+      const response = await axios.get('http://192.168.0.4:5000/categories');
       setCategories(response.data.categories);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
@@ -46,7 +48,7 @@ const [selectedColor, setSelectedColor] = useState(null);
 
   const fetchTasks = async () => {
     try {
-      const response = await axios.get('http://192.168.0.178:5000/tasks', { params: { username } });
+      const response = await axios.get('http://192.168.0.4:5000/tasks', { params: { username } });
       //const response = await axios.get('http://192.168.0.178:5000/tasks');
       setTasks(response.data.tasks);
       const todayTasks = tasks.filter(task => !task.completed);
@@ -57,6 +59,14 @@ const [selectedColor, setSelectedColor] = useState(null);
     console.log(todayTasks);
     } catch (error) {
       console.error('Failed to fetch tasks:', error);
+    }
+  };
+  const fetchUserDetails = async () => {
+    try {
+      const response = await axios.get('http://192.168.0.4:5000/user-details', { params: { username } });
+      setUserDetails(response.data.user);
+    } catch (error) {
+      console.error('Failed to fetch user details:', error);
     }
   };
 
@@ -94,7 +104,7 @@ const [selectedColor, setSelectedColor] = useState(null);
         color: newCategoryColor,
       };
   
-      await axios.post('http://192.168.0.178:5000/categories', category);
+      await axios.post('http://192.168.0.4:5000/categories', category);
       
       // Reset values after saving
       setNewCategoryName('');
@@ -113,7 +123,7 @@ const [selectedColor, setSelectedColor] = useState(null);
   };
   const handleCheckboxChange = async (taskId, isChecked) => {
     try {
-      await axios.put(`http://192.168.0.178:5000/tasks/${taskId}`, { completed: isChecked });
+      await axios.put(`http://192.168.0.4:5000/tasks/${taskId}`, { completed: isChecked });
   
       // After updating, fetch tasks again to reflect the updated status
       fetchTasks();
@@ -176,7 +186,7 @@ const [selectedColor, setSelectedColor] = useState(null);
         <Text style={styles.indexText}>Home</Text>
         <TouchableOpacity style={styles.profileIcon} onPress={() => navigation.navigate('Profile')}>
           <Image
-            source={{ uri: 'https://via.placeholder.com/40' }} // Replace with your profile icon
+            source={{ uri: userDetails.profileImage || 'https://via.placeholder.com/40' }} // Use profile image or placeholder
             style={styles.profileImage}
           />
         </TouchableOpacity>
@@ -320,6 +330,7 @@ const [selectedColor, setSelectedColor] = useState(null);
         isVisible={isProfileModalVisible}
         toggleVisibility={toggleProfileModal}
         username={username}
+        setUsername={setUsername}
       />
     
     </View>

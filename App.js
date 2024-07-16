@@ -83,7 +83,7 @@ const App = () => {
         </Stack.Screen>
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Home">
-          {(props) => <HomeScreen {...props} username={username} setIsLoggedIn={setIsLoggedIn} />}
+          {(props) => <HomeScreen {...props} username={username} setIsLoggedIn={setIsLoggedIn} setUsername={setUsername} />}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>

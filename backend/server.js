@@ -23,8 +23,10 @@ mongoose.connect(MONGO_URL).then(() => {
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  profileImage: { type: String, default: 'https://via.placeholder.com/150' },
   status: { type: String, default: 'active' },
 }, { timestamps: true });
+
 
 const User = mongoose.model('User', UserSchema);
 
@@ -151,6 +153,88 @@ app.delete('/tasks/:id', async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+app.get('/user-details', async (req, res) => {
+  try {
+    const { username } = req.query;
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).send({ error: 'User not found' });
+    }
+    res.send({ user });
+  } catch (error) {
+    res.status(400).send({ error: error.message });
+  }
+});
+app.post('/update-profile-image', async (req, res) => {
+  console.log(req.body); // Add this line to see incoming data
+  try {
+    const { username, profileImage } = req.body;
+    const user = await User.findOneAndUpdate(
+      { username },
+      { profileImage },
+      { new: true }
+    );
+    if (!user) {
+      return res.status(404).send({ error: 'User not found' });
+    }
+    res.send({ message: 'Profile image updated', user });
+  } catch (error) {
+    res.status(400).send({ error: error.message });
+  }
+});
+// Add this to your existing backend code
+app.post('/update-username', async (req, res) => {
+  try {
+    const { oldUsername, newUsername } = req.body;
+
+    // Update the username in User collection
+    const user = await User.findOneAndUpdate(
+      { username: oldUsername },
+      { username: newUsername },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).send({ error: 'User not found' });
+    }
+
+    // Update the username in Task collection
+    await Task.updateMany(
+      { username: oldUsername },
+      { username: newUsername }
+    );
+
+    res.status(200).send({ message: 'Username updated successfully in task', user });
+  } catch (error) {
+    console.error('Failed to update username:', error);
+    res.status(400).send({ error: error.message });
+  }
+});
+
+
+app.post('/update-password', async (req, res) => {
+  try {
+    const { username, oldPassword, newPassword } = req.body;
+    const user = await User.findOne({ username });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      throw new Error('Old password is incorrect');
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+    res.status(200).send({ message: 'Password updated successfully', user });
+  } catch (error) {
+    console.error('Failed to update password:', error);
+    res.status(400).send({ error: error.message });
+  }
+});
+
+
 app.listen(5000, () => {
   console.log('Server running on port 5000');
 });

@@ -50,10 +50,11 @@ const App = () => {
   const checkForFirstTimeLoaded = async () => {
     const isFirstTimeOpen = await AsyncStorage.getItem('isFirstTimeOpen');
     const storedUsername = await AsyncStorage.getItem('username');
+    const storedIsLoggedIn = await AsyncStorage.getItem('isLoggedIn');
     if (isFirstTimeOpen === null) {
       setIsFirstTimeLoad(true);
     }
-    if (storedUsername) {
+    if (storedUsername && storedIsLoggedIn === 'true') {
       setUsername(storedUsername);
       setIsLoggedIn(true);
     }
@@ -69,6 +70,20 @@ const App = () => {
     AsyncStorage.setItem('isFirstTimeOpen', 'no');
   };
 
+  const handleLoginn = async (username) => {
+    setUsername(username);
+    setIsLoggedIn(true);
+    await AsyncStorage.setItem('username', username);
+    await AsyncStorage.setItem('isLoggedIn', 'true');
+  };
+
+  const handleLogout = async () => {
+    setUsername('');
+    setIsLoggedIn(false);
+    await AsyncStorage.removeItem('username');
+    await AsyncStorage.setItem('isLoggedIn', 'false');
+  };
+
   if (loading) return null;
 
   return (
@@ -79,11 +94,26 @@ const App = () => {
           {(props) => <Welcome {...props} slides={slides} onDone={handleDone} />}
         </Stack.Screen>
         <Stack.Screen name="Login">
-          {(props) => <LoginScreen {...props} setUsername={setUsername} setIsLoggedIn={setIsLoggedIn} />}
+          {(props) => (
+            <LoginScreen 
+              {...props} 
+              setUsername={setUsername} 
+              setIsLoggedIn={setIsLoggedIn} 
+              handleLoginn={handleLoginn} 
+
+            />
+          )}
         </Stack.Screen>
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Home">
-          {(props) => <HomeScreen {...props} username={username} setIsLoggedIn={setIsLoggedIn} setUsername={setUsername} />}
+          {(props) => (
+            <HomeScreen 
+              {...props} 
+              username={username} 
+              setIsLoggedIn={setIsLoggedIn} 
+              setUsername={setUsername} 
+            />
+          )}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>

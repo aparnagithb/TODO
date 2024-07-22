@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, Modal, TouchableOpacity, StyleSheet, Image, ScrollView, FlatList } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, Button, FlatList, Image } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import styles from './editstyle'; // Import styles
+import EditTitleDescModal from './EditTitleDescModal'; // Import the new modal
 
 const EditTaskModal = ({ visible, onClose, task, fetchTasks }) => {
   const initialTaskState = {
@@ -14,32 +16,42 @@ const EditTaskModal = ({ visible, onClose, task, fetchTasks }) => {
     finishTime: null,
   };
 
-  const [editedTask, setEditedTask] = useState(task ? { ...initialTaskState, ...task } : initialTaskState);
+  const [editedTask, setEditedTask] = useState(initialTaskState);
   const [categories, setCategories] = useState([]);
-  const [categorySelection, setCategorySelection] = useState(task?.category?._id || '');
+  const [categorySelection, setCategorySelection] = useState('');
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
-  const [prioritySelection, setPrioritySelection] = useState(task?.priorityFlag || 1);
+  const [prioritySelection, setPrioritySelection] = useState(1);
   const [isPriorityModalVisible, setIsPriorityModalVisible] = useState(false);
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [isEditingTitleDesc, setIsEditingTitleDesc] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
   useEffect(() => {
     fetchCategories();
+    fetchTasks(); // Refresh the task list
+
   }, []);
 
   useEffect(() => {
     if (task) {
-      setEditedTask({ ...initialTaskState, ...task });
-      setCategorySelection(task.category._id);
-      setPrioritySelection(task.priorityFlag);
+      setEditedTask({
+        ...initialTaskState,
+        ...task,
+        timeLimit: task.timeLimit ? new Date(task.timeLimit) : new Date(),
+        finishTime: task.finishTime ? new Date(task.finishTime) : null,
+      });
+      setCategorySelection(task.category?._id || '');
+      setPrioritySelection(task.priorityFlag || 1);
+      fetchTasks(); // Refresh the task list
+
     }
+    fetchTasks(); // Refresh the task list
+
   }, [task]);
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://192.168.0.4:5000/categories');
+      const response = await axios.get('http://192.168.5.54:5000/categories');
       setCategories(response.data.categories);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -54,17 +66,38 @@ const EditTaskModal = ({ visible, onClose, task, fetchTasks }) => {
     setPrioritySelection(priority);
   };
 
-  const handleSaveCategory = () => {
-    setEditedTask({ ...editedTask, category: categorySelection });
-    setIsCategoryModalVisible(false);
+  const handleSaveCategory = async () => {
+    try {
+      const selectedCategory = categories.find(cat => cat._id === categorySelection);
+      const updatedTask = { ...editedTask, category: selectedCategory };
+
+      await axios.put(`http://192.168.5.54:5000/tasks/${task._id}`, updatedTask);
+
+      setEditedTask(updatedTask);
+      setIsCategoryModalVisible(false);
+      fetchTasks(); // Refresh the task list
+    } catch (error) {
+      console.error('Error saving category:', error);
+    }
   };
 
-  const handleSavePriority = () => {
-    setEditedTask({ ...editedTask, priorityFlag: prioritySelection });
-    setIsPriorityModalVisible(false);
+  const handleSavePriority = async () => {
+    try {
+      const updatedTask = { ...editedTask, priorityFlag: prioritySelection };
+
+      await axios.put(`http://192.168.5.54:5000/tasks/${task._id}`, updatedTask);
+
+      setEditedTask(updatedTask);
+      setIsPriorityModalVisible(false);
+      fetchTasks(); // Refresh the task list
+    } catch (error) {
+      console.error('Error saving priority:', error);
+    }
   };
 
   const saveChanges = async () => {
+    if (!task) return;
+
     try {
       const taskData = {
         _id: task._id,
@@ -75,7 +108,7 @@ const EditTaskModal = ({ visible, onClose, task, fetchTasks }) => {
         timeLimit: editedTask.timeLimit,
         finishTime: editedTask.finishTime,
       };
-      const response = await axios.put(`http://192.168.0.4:5000/tasks/${task._id}`, taskData);
+      const response = await axios.put(`http://192.168.5.54:5000/tasks/${task._id}`, taskData);
       console.log('Task updated successfully:', response.data.task);
       fetchTasks();
       onClose();
@@ -84,9 +117,71 @@ const EditTaskModal = ({ visible, onClose, task, fetchTasks }) => {
     }
   };
 
-  const deleteTask = async () => {
+  const handleSaveTitleDesc = async (title, description) => {
     try {
-      const response = await axios.delete(`http://192.168.0.4:5000/tasks/${task._id}`);
+      const updatedTask = { ...editedTask, title, description };
+
+      await axios.put(`http://192.168.5.54:5000/tasks/${task._id}`, updatedTask);
+
+      setEditedTask(updatedTask);
+      setIsEditingTitleDesc(false);
+      fetchTasks(); // Refresh the task list
+    } catch (error) {
+      console.error('Error saving title and description:', error);
+    }
+  };
+
+  const handleDateUpdate = async (date) => {
+    try {
+      const updatedTask = { ...editedTask, timeLimit: date };
+
+      await axios.put(`http://192.168.5.54:5000/tasks/${task._id}`, updatedTask);
+
+      setEditedTask(updatedTask);
+      fetchTasks(); // Refresh the task list
+    } catch (error) {
+      console.error('Error updating date:', error);
+    }
+  };
+
+  const handleTimeUpdate = async (time) => {
+    try {
+      const updatedTask = { ...editedTask, finishTime: time };
+
+      await axios.put(`http://192.168.5.54:5000/tasks/${task._id}`, updatedTask);
+
+      setEditedTask(updatedTask);
+      fetchTasks(); // Refresh the task list
+    } catch (error) {
+      console.error('Error updating time:', error);
+    }
+  };
+
+  const handleDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || editedTask.timeLimit;
+    setShowDatePicker(false);
+    setEditedTask((prevTask) => ({
+      ...prevTask,
+      timeLimit: currentDate,
+    }));
+    handleDateUpdate(currentDate);
+  };
+
+  const handleTimeChange = (event, selectedTime) => {
+    const currentTime = selectedTime || editedTask.finishTime;
+    setShowTimePicker(false);
+    setEditedTask((prevTask) => ({
+      ...prevTask,
+      finishTime: currentTime,
+    }));
+    handleTimeUpdate(currentTime);
+  };
+
+  const deleteTask = async () => {
+    if (!task) return;
+
+    try {
+      const response = await axios.delete(`http://192.168.5.54:5000/tasks/${task._id}`);
       console.log('Task deleted successfully:', response.data.message);
       fetchTasks();
       onClose();
@@ -106,322 +201,146 @@ const EditTaskModal = ({ visible, onClose, task, fetchTasks }) => {
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Text style={styles.closeButtonText}>x</Text>
           </TouchableOpacity>
+          
           <View style={styles.row}>
-            <Text style={styles.labeltop}>Edit Task</Text>
+          <Text style={[styles.value, { fontSize: 24 }]}>     {editedTask.title}</Text>
+          <TouchableOpacity onPress={() => setIsEditingTitleDesc(true)}>
+              <Icon name="pencil" size={20} color="#fff" style={styles.editIcon} />
+            </TouchableOpacity>
           </View>
           <View style={styles.row}>
-            <Text style={styles.label}>Task:</Text>
-            <View style={styles.editRow}>
-              {isEditingTitle ? (
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter Task Name"
-                  placeholderTextColor="#fff"
-                  value={editedTask.title}
-                  onChangeText={(text) => setEditedTask({ ...editedTask, title: text })}
-                  onBlur={() => setIsEditingTitle(false)}
-                />
-              ) : (
-                <>
-                  <Text style={styles.value}>{editedTask.title}</Text>
-                  <TouchableOpacity onPress={() => setIsEditingTitle(true)}>
-                    <Icon name="pencil" size={20} color="#fff" style={styles.editIcon} />
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
+            <Text style={styles.value}>       {editedTask.description}</Text>
           </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Description:</Text>
-            <View style={styles.editRow}>
-              {isEditingDescription ? (
-                <TextInput
-                  style={[styles.input, styles.descriptionInput]}
-                  placeholder="Enter Task Description"
-                  placeholderTextColor="#fff"
-                  multiline
-                  numberOfLines={4}
-                  value={editedTask.description}
-                  onChangeText={(text) => setEditedTask({ ...editedTask, description: text })}
-                  onBlur={() => setIsEditingDescription(false)}
-                />
-              ) : (
-                <>
-                  <Text style={styles.value}>{editedTask.description}</Text>
-                  <TouchableOpacity onPress={() => setIsEditingDescription(true)}>
-                    <Icon name="pencil" size={20} color="#fff" style={styles.editIcon} />
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
-          </View>
-          <View style={styles.row}>
+          <EditTitleDescModal
+            visible={isEditingTitleDesc}
+            onClose={() => setIsEditingTitleDesc(false)}
+            task={editedTask}
+            saveChanges={handleSaveTitleDesc}
+          />
+<View style={[styles.row, { marginTop: 35 }]}>
+            <Icon name="tag" size={30} color="#fff" />
             <Text style={styles.label}>Category:</Text>
-            <TouchableOpacity onPress={() => setIsCategoryModalVisible(true)}>
-              <Text style={styles.value}>
-                {categories.find((cat) => cat._id === categorySelection)?.name}
+            <TouchableOpacity style={{ flex: 1, alignItems: 'flex-end' }} onPress={() => setIsCategoryModalVisible(true)}>
+              <Text style={styles.val}>
+                {categories.find((cat) => cat._id === categorySelection)?.name || 'Select Category'}
               </Text>
             </TouchableOpacity>
           </View>
-          <View style={styles.row}>
+          <View style={[styles.row, { marginTop: 35 }]}>
+            <Icon name="flag" size={30} color="#fff" />
             <Text style={styles.label}>Priority:</Text>
-            <TouchableOpacity onPress={() => setIsPriorityModalVisible(true)}>
-              <Text style={styles.value}>{prioritySelection}</Text>
+            <TouchableOpacity style={{ flex: 1, alignItems: 'flex-end' }} onPress={() => setIsPriorityModalVisible(true)}>
+              <Text style={styles.val}>{prioritySelection}</Text>
             </TouchableOpacity>
           </View>
-          <View style={styles.iconRow}>
-            <View style={styles.leftIcons}>
-              <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.icon}>
-                <Icon name="calendar" size={30} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.icon}>
-                <Icon name="clock-o" size={30} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity onPress={saveChanges} style={styles.icon}>
-              <Icon name="send" size={30} color="#fff" />
+          <View style={[styles.dateRow, { marginTop: 35 }]}>
+            <Icon name="calendar" size={30} color="#fff" />
+            <Text style={styles.label}>Task Date:</Text>
+            <TouchableOpacity style={{ flex: 1, alignItems: 'flex-end' }} onPress={() => setShowDatePicker(true)}>
+              <Text style={styles.val}>{editedTask.timeLimit ? editedTask.timeLimit.toDateString() : 'Set Date'}</Text>
             </TouchableOpacity>
+            {showDatePicker && (
+              <DateTimePicker
+                value={editedTask.timeLimit || new Date()}
+                mode="date"
+                display="default"
+                onChange={handleDateChange}
+              />
+            )}
           </View>
-          {showDatePicker && (
-            <DateTimePicker
-              value={editedTask.timeLimit}
-              mode="date"
-              display="default"
-              onChange={(event, selectedDate) => {
-                const currentDate = selectedDate || editedTask.timeLimit;
-                setShowDatePicker(false);
-                setEditedTask({ ...editedTask, timeLimit: currentDate });
-              }}
-            />
-          )}
-          {showTimePicker && (
-            <DateTimePicker
-              value={editedTask.finishTime || new Date()}
-              mode="time"
-              display="default"
-              onChange={(event, selectedTime) => {
-                setShowTimePicker(false);
-                if (selectedTime) {
-                  setEditedTask({ ...editedTask, finishTime: selectedTime });
-                }
-              }}
-            />
-          )}
+          <View style={[styles.dateRow, { marginTop: 35 }]}>
+            <Icon name="clock-o" size={30} color="#fff" />
+            <Text style={styles.label}>Finish Time:</Text>
+            <TouchableOpacity style={{ flex: 1, alignItems: 'flex-end' }} onPress={() => setShowTimePicker(true)}>
+              <Text style={styles.val}>{editedTask.finishTime ? editedTask.finishTime.toLocaleTimeString() : 'Set Time'}</Text>
+            </TouchableOpacity>
+            {showTimePicker && (
+              <DateTimePicker
+                value={editedTask.finishTime || new Date()}
+                mode="time"
+                display="default"
+                onChange={handleTimeChange}
+              />
+            )}
+          </View>
           <Modal visible={isCategoryModalVisible} animationType="slide" transparent={true}>
-            <View style={styles.centeredView}>
-              <View style={styles.modalView}>
-                <TouchableOpacity onPress={() => setIsCategoryModalVisible(false)} style={styles.closeCategoryButton}>
-                  <Text style={styles.closeCategoryButtonText}>X</Text>
-                </TouchableOpacity>
-                <ScrollView contentContainerStyle={styles.categoryList}>
-                  {categories.map((item) => (
-                    <TouchableOpacity
-                      key={item._id}
-                      onPress={() => handleSelectCategory(item)}
-                      style={[styles.categoryItem, item._id === categorySelection && styles.selectedCategoryItem]}
-                    >
-                      <Image source={{ uri: item.icon }} style={styles.categoryIcon} resizeMode="cover" />
-                      <Text style={styles.categoryText}>{item.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-                <TouchableOpacity onPress={handleSaveCategory} style={styles.saveButton}>
-                  <Text style={styles.saveButtonText}>Save</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
-          <Modal visible={isPriorityModalVisible} animationType="slide" transparent={true}>
-            <View style={styles.centeredView}>
-              <View style={styles.modalView}>
-                <TouchableOpacity onPress={() => setIsPriorityModalVisible(false)} style={styles.closePriorityButton}>
-                  <Text style={styles.closePriorityButtonText}>X</Text>
-                </TouchableOpacity>
-                <FlatList
-                  data={[1, 2, 3]}
-                  keyExtractor={(item) => item.toString()}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      onPress={() => handleSelectPriority(item)}
-                      style={[styles.priorityItem, item === prioritySelection && styles.selectedPriorityItem]}
-                    >
-                      <Text style={styles.priorityText}>{item}</Text>
-                    </TouchableOpacity>
-                  )}
-                />
-                <TouchableOpacity onPress={handleSavePriority} style={styles.saveButton}>
-                  <Text style={styles.saveButtonText}>Save</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
-          <View style={styles.iconRow}>
-            <View style={styles.leftIcons}>
-              <TouchableOpacity onPress={deleteTask} style={styles.deleteButton}>
-                <Icon name="trash" size={30} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </View>
+  <View style={styles.centeredView}>
+    <View style={styles.categoryModalView}>
+      <FlatList
+        data={categories}
+        renderItem={({ item }) => (
+          <TouchableOpacity 
+            key={item._id} 
+            onPress={() => handleSelectCategory(item)} 
+            style={styles.categoryItemContainer}
+          >
+            <Image source={{ uri: item.icon }} style={styles.categoryIcon} />
+            <Text style={styles.categoryItemText}>{item.name}</Text>
+          </TouchableOpacity>
+        )}
+        keyExtractor={(item) => item._id}
+        numColumns={3} // Display 3 items per row
+        contentContainerStyle={styles.categoryGrid}
+      />
+      <View style={styles.categoryButtonContainer}>
+  <TouchableOpacity style={styles.categoryButton} onPress={handleSaveCategory}>
+    <Text style={styles.categoryButtonText}>Save</Text>
+  </TouchableOpacity>
+  <TouchableOpacity style={styles.cancelButton} onPress={() => setIsCategoryModalVisible(false)}>
+    <Text style={styles.ct}>Cancel</Text>
+  </TouchableOpacity>
+</View>
+
+    </View>
+  </View>
+</Modal>
+<Modal visible={isPriorityModalVisible} animationType="slide" transparent={true}>
+  <View style={styles.centeredView}>
+    <View style={styles.categoryModalView}>
+      <FlatList
+        data={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}
+        renderItem={({ item: priority }) => (
+          <TouchableOpacity 
+            key={priority} 
+            onPress={() => handleSelectPriority(priority)} 
+            style={styles.categoryItemContainer}
+          >
+    <Icon name="flag" size={30} color="white" />
+    <Text style={styles.categoryItemText}>{priority}</Text>
+          </TouchableOpacity>
+        )}
+        keyExtractor={(item) => item.toString()}
+        numColumns={3} // Display 3 items per row
+        contentContainerStyle={styles.categoryGrid}
+      />
+      <View style={styles.categoryButtonContainer}>
+        <TouchableOpacity style={styles.categoryButton} onPress={handleSavePriority}>
+          <Text style={styles.categoryButtonText}>Save</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.cancelButton} onPress={() => setIsPriorityModalVisible(false)}>
+          <Text style={styles.ct}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
+    
+          <View style={styles.deleteIconRow}>
+
+  <TouchableOpacity onPress={deleteTask} style={styles.deleteIcon}>
+    <Icon name="trash" size={30} color="red" />
+  </TouchableOpacity>
+  <Text style={styles.deleteText}>Delete</Text>
+
+</View>
         </View>
       </View>
     </Modal>
   );
 };
 
-const styles = StyleSheet.create({
-  centeredView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 22,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalView: {
-    width: '90%',
-    backgroundColor: '#d32f2f',
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  closeButton: {
-    alignSelf: 'flex-end',
-  },
-  closeButtonText: {
-    fontSize: 24,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 10,
-  },
-  label: {
-    fontSize: 18,
-    color: '#fff',
-    flex: 1,
-  },
-  labeltop: {
-    fontSize: 18,
-    color: '#fff',
-    flex: 1,
-    textAlign: 'center',
-  },
-  value: {
-    fontSize: 18,
-    color: '#fff',
-    flex: 2,
-  },
-  input: {
-    backgroundColor: '#fff',
-    color: '#000',
-    borderRadius: 5,
-    padding: 10,
-    flex: 2,
-  },
-  descriptionInput: {
-    height: 80,
-  },
-  editRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 2,
-  },
-  editIcon: {
-    marginLeft: 10,
-  },
-  iconRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginTop: 20,
-  },
-  leftIcons: {
-    flexDirection: 'row',
-  },
-  icon: {
-    marginHorizontal: 10,
-  },
-  deleteButton: {
-    backgroundColor: '#ff0000',
-    padding: 10,
-    borderRadius: 5,
-  },
-  closeCategoryButton: {
-    alignSelf: 'flex-end',
-  },
-  closeCategoryButtonText: {
-    fontSize: 18,
-    color: '#000',
-    fontWeight: 'bold',
-  },
-  closePriorityButton: {
-    alignSelf: 'flex-end',
-  },
-  closePriorityButtonText: {
-    fontSize: 18,
-    color: '#000',
-    fontWeight: 'bold',
-  },
-  categoryList: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  categoryItem: {
-    padding: 10,
-    backgroundColor: '#fff',
-    marginVertical: 5,
-    borderRadius: 5,
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  selectedCategoryItem: {
-    backgroundColor: '#ffcccc',
-  },
-  categoryIcon: {
-    width: 40,
-    height: 40,
-    marginRight: 10,
-  },
-  categoryText: {
-    fontSize: 18,
-    color: '#000',
-  },
-  saveButton: {
-    marginTop: 20,
-    backgroundColor: '#fff',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  saveButtonText: {
-    fontSize: 18,
-    color: '#000',
-  },
-  priorityItem: {
-    padding: 10,
-    backgroundColor: '#fff',
-    marginVertical: 5,
-    borderRadius: 5,
-    width: '100%',
-    alignItems: 'center',
-  },
-  selectedPriorityItem: {
-    backgroundColor: '#ffcccc',
-  },
-  priorityText: {
-    fontSize: 18,
-    color: '#000',
-  },
-});
+
+
+
 
 export default EditTaskModal;

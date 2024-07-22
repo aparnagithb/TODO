@@ -6,7 +6,7 @@ import ChangeUsernameModal from './ChangeUsernameModal';
 import ChangePasswordModal from './ChangePasswordModal';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
-const ProfileModal = ({ isVisible, toggleVisibility, username, setUsername }) => {
+const ProfileModal = ({ isVisible, toggleVisibility, username, setUsername,handleLogout }) => {
   const [userDetails, setUserDetails] = useState({});
   const [tasks, setTasks] = useState([]);
   const [todayTasks, setTodayTasks] = useState([]);
@@ -16,7 +16,7 @@ const ProfileModal = ({ isVisible, toggleVisibility, username, setUsername }) =>
 
   const fetchUserDetails = async () => {
     try {
-      const response = await axios.get('http://192.168.0.4:5000/user-details', { params: { username } });
+      const response = await axios.get('http://192.168.5.54:5000/user-details', { params: { username } });
       setUserDetails(response.data.user);
     } catch (error) {
       console.error('Failed to fetch user details:', error);
@@ -25,7 +25,7 @@ const ProfileModal = ({ isVisible, toggleVisibility, username, setUsername }) =>
 
   const fetchTasks = async () => {
     try {
-      const response = await axios.get('http://192.168.0.4:5000/tasks', { params: { username } });
+      const response = await axios.get('http://192.168.5.54:5000/tasks', { params: { username } });
       setTasks(response.data.tasks);
       const todayTasks = response.data.tasks.filter(task => !task.completed);
       const completedTasks = response.data.tasks.filter(task => task.completed);
@@ -61,7 +61,7 @@ const ProfileModal = ({ isVisible, toggleVisibility, username, setUsername }) =>
 
   const updateProfileImage = async (profileImage) => {
     try {
-      const response = await axios.post('http://192.168.0.4:5000/update-profile-image', { username, profileImage });
+      const response = await axios.post('http://192.168.5.54:5000/update-profile-image', { username, profileImage });
       setUserDetails(response.data.user);
       Alert.alert('Success', 'Profile image updated successfully');
     } catch (error) {
@@ -158,8 +158,8 @@ const ProfileModal = ({ isVisible, toggleVisibility, username, setUsername }) =>
       <Icon name="chevron-right" size={20} color="white" style={styles.arrow} />
     </View>
   </TouchableOpacity>
-  <TouchableOpacity style={styles.button} onPress={() => { /* logout */ }}>
-    <View style={styles.buttonContent}>
+  <TouchableOpacity style={styles.button} onPress={handleLogout}>
+  <View style={styles.buttonContent}>
     <Icon name="sign-out" size={20} color="red" style={styles.icon} />
     <Text style={styles.LogoutText}>Logout</Text>
     </View>

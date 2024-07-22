@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, TextInput, FlatList } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
@@ -9,6 +9,8 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import EditTaskModal from './EditTaskModal';
 import ProfileModal from './ProfileModal'; // Import ProfileModal component
 import styles from './styles'; // Import styles
+import { useFocusEffect } from '@react-navigation/native';
+
 
 
 const HomeScreen = ({ username, setIsLoggedIn ,setUsername}) => {
@@ -30,16 +32,26 @@ const [isProfileModalVisible, setIsProfileModalVisible] = useState(false); // St
 const [selectedColor, setSelectedColor] = useState(null);
 const [userDetails, setUserDetails] = useState({});
 
-
+/*useFocusEffect(
+  useCallback(() => {
+    fetchTasks();
+    fetchCategories();
+    fetchUserDetails();
+  }, [])
+);*/
   useEffect(() => {
     fetchCategories();
     fetchTasks(); // Fetch tasks when component mounts
     fetchUserDetails();
   }, []);
+  useEffect(()=>{
+    fetchTasks();
+  }, [tasks]);
+
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://192.168.0.4:5000/categories');
+      const response = await axios.get('http://192.168.5.54:5000/categories');
       setCategories(response.data.categories);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
@@ -48,7 +60,7 @@ const [userDetails, setUserDetails] = useState({});
 
   const fetchTasks = async () => {
     try {
-      const response = await axios.get('http://192.168.0.4:5000/tasks', { params: { username } });
+      const response = await axios.get('http://192.168.5.54:5000/tasks', { params: { username } });
       //const response = await axios.get('http://192.168.0.178:5000/tasks');
       setTasks(response.data.tasks);
       const todayTasks = tasks.filter(task => !task.completed);
@@ -56,25 +68,28 @@ const [userDetails, setUserDetails] = useState({});
     
     setTodayTasks(todayTasks);
     setCompletedTasks(completedTasks);
-    console.log(todayTasks);
+    //console.log(todayTasks);
     } catch (error) {
       console.error('Failed to fetch tasks:', error);
     }
   };
   const fetchUserDetails = async () => {
     try {
-      const response = await axios.get('http://192.168.0.4:5000/user-details', { params: { username } });
+      const response = await axios.get('http://192.168.5.54:5000/user-details', { params: { username } });
       setUserDetails(response.data.user);
     } catch (error) {
       console.error('Failed to fetch user details:', error);
     }
   };
-
   const handleLogout = async () => {
-    await AsyncStorage.removeItem('username');
+    setUsername('');
     setIsLoggedIn(false);
+    await AsyncStorage.removeItem('username');
+    await AsyncStorage.setItem('isLoggedIn', 'false');
     navigation.navigate('Login');
+
   };
+ 
 
   const openImagePicker = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -104,7 +119,7 @@ const [userDetails, setUserDetails] = useState({});
         color: newCategoryColor,
       };
   
-      await axios.post('http://192.168.0.4:5000/categories', category);
+      await axios.post('http://192.168.5.54:5000/categories', category);
       
       // Reset values after saving
       setNewCategoryName('');
@@ -123,7 +138,7 @@ const [userDetails, setUserDetails] = useState({});
   };
   const handleCheckboxChange = async (taskId, isChecked) => {
     try {
-      await axios.put(`http://192.168.0.4:5000/tasks/${taskId}`, { completed: isChecked });
+      await axios.put(`http://192.168.5.54:5000/tasks/${taskId}`, { completed: isChecked });
   
       // After updating, fetch tasks again to reflect the updated status
       fetchTasks();
@@ -152,18 +167,24 @@ const [userDetails, setUserDetails] = useState({});
   
       {/* Row 2: Finish by */}
       <View style={styles.rowItem}>
-        <Text style={styles.label}>Finish by</Text>
-        <Text style={styles.taskDetails}>{new Date(item.finishTime).toLocaleString()}</Text>
-      </View>
+  <Text style={styles.label}>Finish by</Text>
+  <Text style={styles.taskDetails}>
+    {new Date(item.timeLimit).toLocaleDateString()} {new Date(item.finishTime).toLocaleTimeString()}
+  </Text>
+</View>
+
   
       {/* Row 3: Category and Priority */}
       <View style={[styles.rowItem, styles.categoryPriorityRow]}>
-      <Icon name="tag" size={20} color="#fff" style={styles.icon} />
-        <Text style={styles.taskDetails}>{item.category ? item.category.name : 'None'}</Text>
-        <Image source={{ uri: item.priorityFlag.icon }} style={styles.priorityIcon} />
-        <Icon name="flag" size={20} color="#fff" style={styles.icon} />
-        <Text style={styles.taskDetails}>{item.priorityFlag}</Text>
-      </View>
+  <View style={[styles.categoryContainer, { backgroundColor: item.category ? item.category.color : 'transparent' }]}>
+    <Icon name="tag" size={20} color="#fff" style={styles.icon} />
+    <Text style={styles.taskDetails}>{item.category ? item.category.name : 'General'}</Text>
+  </View>
+  <Image source={{ uri: item.priorityFlag.icon }} style={styles.priorityIcon} />
+  <Icon name="flag" size={20} color="#fff" style={styles.icon} />
+  <Text style={styles.taskDetails}>{item.priorityFlag}</Text>
+</View>
+
     </View>
   );
   const openEditTaskModal = (task) => {
@@ -331,6 +352,7 @@ const [userDetails, setUserDetails] = useState({});
         toggleVisibility={toggleProfileModal}
         username={username}
         setUsername={setUsername}
+        handleLogout={handleLogout}
       />
     
     </View>

@@ -3,7 +3,7 @@ import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'reac
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 
-const LoginScreen = ({ setUsername, setIsLoggedIn }) => {
+const LoginScreen = ({ setUsername, setIsLoggedIn,handleLoginn }) => {
   const navigation = useNavigation();
   const [username, setUsernameLocal] = useState('');
   const [password, setPassword] = useState('');
@@ -19,7 +19,7 @@ const LoginScreen = ({ setUsername, setIsLoggedIn }) => {
         throw new Error('Password must be at least 8 characters long');
       }
 
-      const response = await fetch('http://192.168.0.4:5000/login', {
+      const response = await fetch('http://192.168.5.54:5000/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -35,6 +35,8 @@ const LoginScreen = ({ setUsername, setIsLoggedIn }) => {
       console.log('User logged in:', data);
 
       await AsyncStorage.setItem('username', username);
+      await AsyncStorage.setItem('isLoggedIn', 'true');
+
       setUsername(username);
       setIsLoggedIn(true);
       navigation.navigate('Home');

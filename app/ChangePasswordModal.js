@@ -8,7 +8,7 @@ const ChangePasswordModal = ({ isVisible, toggleVisibility, username }) => {
 
   const handleSave = async () => {
     try {
-      const response = await axios.post('http://192.168.0.4:5000/update-password', { username, oldPassword, newPassword });
+      const response = await axios.post('http://192.168.5.54:5000/update-password', { username, oldPassword, newPassword });
       toggleVisibility(); // Close the modal
       Alert.alert('Success', 'Password updated successfully');
     } catch (error) {

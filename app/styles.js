@@ -5,7 +5,7 @@ const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: '#000',
-      padding: 11,
+      padding: 10,
     },
     topContainer: {
       flexDirection: 'row',
@@ -207,10 +207,10 @@ const styles = StyleSheet.create({
       marginBottom: 10,
     },
     inputContainer: {
-      marginBottom: 15,
+      marginBottom: 16,
     },
     label: {
-      fontSize: 16,
+      fontSize: 15,
       color: '#fff',
       marginBottom: 5,
     },
@@ -290,6 +290,13 @@ const styles = StyleSheet.create({
     categoryIcon: {
       width: '100%',
       height: '100%',
+    },
+    categoryContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 5,
+      borderRadius: 5, // optional, for rounded corners
+      // other styles for categoryContainer
     },
     iconOverlay: {
       position: 'absolute',

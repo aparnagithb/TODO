@@ -7,7 +7,7 @@ const ChangeUsernameModal = ({ isVisible, toggleVisibility, currentUsername, onU
 
   const handleSave = async () => {
     try {
-      const response = await axios.post('http://192.168.0.4:5000/update-username', { oldUsername: currentUsername, newUsername });
+      const response = await axios.post('http://192.168.5.54:5000/update-username', { oldUsername: currentUsername, newUsername });
       onUpdate(newUsername); // Notify parent component
       toggleVisibility(); // Close the modal
       Alert.alert('Success', 'Username updated successfully');
